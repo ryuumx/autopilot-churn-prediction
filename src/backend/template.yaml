@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  autopilot_churnprediction
+
+  Sample SAM Template for autopilot_churnprediction
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 10
+    Environment:
+      Variables:
+        MODELENDPOINT: "ChurnPrediction-xxx"
+  Api:
+    Cors:
+      AllowMethods: "'POST,OPTIONS'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
+
+Resources:
+  PredictFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: predict/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      Events:
+        HelloWorld:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /predict
+            Method: post
+      Policies:
+      - Statement:
+        - Sid: AllowSageMakerActions
+          Effect: Allow
+          Action:
+          - sagemaker:*
+          Resource: '*'
+        - Sid: AllowS3Actions
+          Effect: Allow
+          Action:
+          - s3:*
+          Resource: '*'
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  PredictApi:
+    Description: "API Gateway endpoint URL for Prod stage for Predict function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/predict/"
+  PredictFunction:
+    Description: "Predict Lambda Function ARN"
+    Value: !GetAtt PredictFunction.Arn
+  PredictIamRole:
+    Description: "Implicit IAM Role created for Predict function"
+    Value: !GetAtt PredictFunction.Arn
